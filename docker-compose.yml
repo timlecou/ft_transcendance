@@ -1,0 +1,50 @@
+version: "3"
+
+services:
+  back:
+    build: ./back/
+    container_name: website-back
+    restart: always
+    volumes:
+      - ./back:/app
+    ports:
+      - "4000:4000"
+      - "81:81"
+    environment:
+      PORT: 4000
+      FRONT_URI: "http://localhost:3000"
+      FORTYTWO_OAUTH_UID: <FORTYTWO_OAUTH_UID>
+      FORTYTWO_OAUTH_SECRET: <FORTYTWO_OAUTH_SECRET>
+      JWT_SECRET: <JWT_SECRET>
+      MJ_APIKEY_PUBLIC: <MJ_APIKEY_PUBLIC>
+      MJ_APIKEY_SECRET: <MJ_APIKEY_SECRET>
+    command: "yarn start:dev"
+    depends_on:
+      - db
+  front:
+    build: ./front/
+    container_name: website-front
+    restart: always
+    volumes:
+      - ./front:/app
+    ports:
+      - "3000:3000"
+    environment:
+      BASE_URL: "http://localhost:4000"
+      SOCKET_IO_URI: "http://localhost:81"
+      SSR_BACKEND_BASE_URL: "http://back:4000"
+      OAUTH_REDIRECT_URL: "http://localhost:3000/auth/42"
+      FORTYTWO_OAUTH_UID: <FORTYTWO_OAUTH_UID>
+    command: "yarn dev"
+    depends_on:
+      - back
+  db:
+    image: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/.tmp/db:/var/lib/postgresql/data
+      - ./postgres/create_database.sql:/docker-entrypoint-initdb.d/create_database.sql
+    environment:
+      POSTGRES_PASSWORD: password
+      PGDATA: /tmp
